@@ -2,14 +2,17 @@
 name = "shared-bus-rtic"
 version = "0.1.0"
 authors = ["Ryan Summers <ryan.summers@vertigo-designs.com>"]
+edition = "2018"
+
 description = "Provides macros and type definitions for sharing peripheral communication buses in an RTIC application"
+homepage = "https://github.com/ryan-summers/shared-bus-rtic"
+repository = "https://github.com/ryan-summers/shared-bus-rtic"
+documentation = "https://docs.rs/shared-bus-rtic"
+
 categories = ["embedded", "concurrency", "no-std", "hardware-support"]
 keywords = ["shared-bus", "embedded", "i2c", "spi", "embedded-hal"]
-edition = "2018"
 license = "MIT"
 readme = "README.md"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 shared-bus = "0.1.4"
