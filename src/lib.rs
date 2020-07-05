@@ -113,7 +113,7 @@ macro_rules! new {
         unsafe {
             use shared_bus_rtic::{
                 shared_bus::BusManager,
-                Mutext,
+                Mutex,
             };
             static mut _MANAGER: core::mem::MaybeUninit<BusManager<Mutex<$T>, $T>> =
                 core::mem::MaybeUninit::uninit();
