@@ -3,7 +3,7 @@ name = "shared-bus-rtic"
 version = "0.1.0"
 authors = ["Ryan Summers <ryan.summers@vertigo-designs.com>"]
 categories = ["embedded", "concurrency", "no-std", "hardware-support"]
-keywords = ["no-std", "no_std", "shared-bus", "embedded", "i2c", "spi", "embedded-hal"]
+keywords = ["shared-bus", "embedded", "i2c", "spi", "embedded-hal"]
 edition = "2018"
 license-file = "LICENSE"
 
