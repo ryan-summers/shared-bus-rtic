@@ -1,12 +1,6 @@
 #![no_std]
 //! # Introduction
-//! This crate provides convenience definitions for working with
-//! [`shared-bus`](../shared_bus/index.html).
-//!
-//! This repository aids in using `shared-bus`, which is a tool to share a single peripheral bus
-//! such as I2C or SPI, with multiple drivers.
-//!
-//! Generally, `shared-bus` creates a `BusManager` which hands out `BusProxy` structures to drivers.
+//! This crate provides a means of sharing an I2C bus between multiple drivers.
 //!
 //! ## Notice
 //! Note that all of the drivers that use the same underlying bus **must** be stored within a single
@@ -18,11 +12,11 @@
 //! ## Usage Example
 //! ```rust
 //!
-//! use shared_bus_rtic::BusProxy;
+//! use shared_bus_rtic::SharedBus;
 //!
 //! struct SharedBusResources<T> {
-//!     device: Device<BusProxy<T>>,
-//!     other_device: OtherDevice<BusProxy<T>>,
+//!     device: Device<SharedBus<T>>,
+//!     other_device: OtherDevice<SharedBus<T>>,
 //! }
 //!
 //! // ...
@@ -53,48 +47,69 @@
 //! ```
 
 use core::sync::atomic::{AtomicBool, Ordering};
+use embedded_hal::blocking::i2c;
 
-pub use shared_bus;
-
-#[doc(hidden)]
-// This is a dummy "mutex" implementation for [`shared_bus`. Note that it is not a mutex in any way,
-// but is rather just a dummy API to provide to `shared_bus`. We do not require a mutex because RTIC
-// will handle resource sharing to ensure we do not have conflicts.
-pub struct DummyMutex<T> {
-    item: T,
+pub struct SharedBus<BUS> {
+    bus: core::cell::UnsafeCell<BUS>,
     busy: AtomicBool,
 }
 
-impl<T> shared_bus::mutex::BusMutex<T> for DummyMutex<T> {
-    fn create(item: T) -> Self {
-        DummyMutex {
-            item: item,
+impl<BUS> SharedBus<BUS> {
+    pub fn new(bus: BUS) -> Self {
+        SharedBus {
+            bus: core::cell::UnsafeCell::new(bus),
             busy: AtomicBool::from(false),
         }
     }
 
-    fn lock<R, F: FnOnce(&T) -> R>(&self, f: F) -> R {
+    fn lock<R, F: FnOnce(&mut BUS) -> R>(&self, f: F) -> R {
         self.busy
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
             .expect("Bus conflict");
-        let result = f(&self.item);
+        let result = f(unsafe { &mut *self.bus.get() });
 
         self.busy.store(false, Ordering::SeqCst);
 
         result
     }
+
+    pub fn acquire(&self) -> &Self {
+        self
+    }
 }
 
-#[doc(hidden)]
-pub type Mutex<T> = DummyMutex<core::cell::RefCell<T>>;
+unsafe impl<BUS> Sync for SharedBus<BUS> {}
 
-/// A convenience type definition for a `shared-bus` BusProxy.
-///
-/// The generic parameter of this type is the type of the underlying bus that is shared.
-pub type BusProxy<T> = shared_bus::proxy::BusProxy<'static, Mutex<T>, T>;
+impl<BUS: i2c::Read> i2c::Read for &SharedBus<BUS> {
+    type Error = BUS::Error;
 
-/// Provides a method of generating a `shared-bus`
-/// [`BusManager`](../shared_bus/proxy/struct.BusManager.html) for use in RTIC.
+    fn read(&mut self, address: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
+        self.lock(|bus| bus.read(address, buffer))
+    }
+}
+
+impl<BUS: i2c::Write> i2c::Write for &SharedBus<BUS> {
+    type Error = BUS::Error;
+
+    fn write(&mut self, address: u8, buffer: &[u8]) -> Result<(), Self::Error> {
+        self.lock(|bus| bus.write(address, buffer))
+    }
+}
+
+impl<BUS: i2c::WriteRead> i2c::WriteRead for &SharedBus<BUS> {
+    type Error = BUS::Error;
+
+    fn write_read(
+        &mut self,
+        address: u8,
+        bytes: &[u8],
+        buffer: &mut [u8],
+    ) -> Result<(), Self::Error> {
+        self.lock(|bus| bus.write_read(address, bytes, buffer))
+    }
+}
+
+/// Provides a method of generating a shared bus.
 ///
 /// ## Args:
 /// * `bus` - The actual bus that should be shared
@@ -103,7 +118,7 @@ pub type BusProxy<T> = shared_bus::proxy::BusProxy<'static, Mutex<T>, T>;
 /// ## Example:
 /// ```rust
 /// let bus: I2C = ();
-/// let manager = rtic_shared_bus::new!(bus, I2C);
+/// let manager = shared_bus_rtic::new!(bus, I2C);
 ///
 /// let device = Device::new(manager.acquire());
 /// ```
@@ -111,13 +126,9 @@ pub type BusProxy<T> = shared_bus::proxy::BusProxy<'static, Mutex<T>, T>;
 macro_rules! new {
     ($bus:ident, $T:ty) => {
         unsafe {
-            use shared_bus_rtic::{
-                shared_bus::BusManager,
-                Mutex,
-            };
-            static mut _MANAGER: core::mem::MaybeUninit<BusManager<Mutex<$T>, $T>> =
+            static mut _MANAGER: core::mem::MaybeUninit<shared_bus_rtic::SharedBus<$T>> =
                 core::mem::MaybeUninit::uninit();
-            _MANAGER = core::mem::MaybeUninit::new(BusManager::new($bus));
+            _MANAGER = core::mem::MaybeUninit::new(shared_bus_rtic::SharedBus::new($bus));
             &*_MANAGER.as_ptr()
         };
     };

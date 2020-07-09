@@ -1,6 +1,6 @@
 [package]
 name = "shared-bus-rtic"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Ryan Summers <ryan.summers@vertigo-designs.com>"]
 edition = "2018"
 
@@ -10,9 +10,9 @@ repository = "https://github.com/ryan-summers/shared-bus-rtic"
 documentation = "https://docs.rs/shared-bus-rtic"
 
 categories = ["embedded", "concurrency", "no-std", "hardware-support"]
-keywords = ["shared-bus", "embedded", "i2c", "spi", "embedded-hal"]
+keywords = ["shared-bus", "rtic", "embedded", "i2c", "embedded-hal"]
 license = "MIT"
 readme = "README.md"
 
 [dependencies]
-shared-bus = "0.1.4"
+embedded-hal = "0.2.4"
