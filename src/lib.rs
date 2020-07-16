@@ -49,14 +49,17 @@
 use core::sync::atomic::{AtomicBool, Ordering};
 use embedded_hal::blocking::{i2c, spi};
 
-pub struct SharedBus<BUS> {
+/// A convenience type to use for declaring the underlying bus type.
+pub type SharedBus<T> = &'static CommonBus<T>;
+
+pub struct CommonBus<BUS> {
     bus: core::cell::UnsafeCell<BUS>,
     busy: AtomicBool,
 }
 
-impl<BUS> SharedBus<BUS> {
+impl<BUS> CommonBus<BUS> {
     pub fn new(bus: BUS) -> Self {
-        SharedBus {
+        CommonBus {
             bus: core::cell::UnsafeCell::new(bus),
             busy: AtomicBool::from(false),
         }
@@ -78,9 +81,9 @@ impl<BUS> SharedBus<BUS> {
     }
 }
 
-unsafe impl<BUS> Sync for SharedBus<BUS> {}
+unsafe impl<BUS> Sync for CommonBus<BUS> {}
 
-impl<BUS: i2c::Read> i2c::Read for &SharedBus<BUS> {
+impl<BUS: i2c::Read> i2c::Read for &CommonBus<BUS> {
     type Error = BUS::Error;
 
     fn read(&mut self, address: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
@@ -88,7 +91,7 @@ impl<BUS: i2c::Read> i2c::Read for &SharedBus<BUS> {
     }
 }
 
-impl<BUS: i2c::Write> i2c::Write for &SharedBus<BUS> {
+impl<BUS: i2c::Write> i2c::Write for &CommonBus<BUS> {
     type Error = BUS::Error;
 
     fn write(&mut self, address: u8, buffer: &[u8]) -> Result<(), Self::Error> {
@@ -96,7 +99,7 @@ impl<BUS: i2c::Write> i2c::Write for &SharedBus<BUS> {
     }
 }
 
-impl<BUS: i2c::WriteRead> i2c::WriteRead for &SharedBus<BUS> {
+impl<BUS: i2c::WriteRead> i2c::WriteRead for &CommonBus<BUS> {
     type Error = BUS::Error;
 
     fn write_read(
@@ -109,7 +112,7 @@ impl<BUS: i2c::WriteRead> i2c::WriteRead for &SharedBus<BUS> {
     }
 }
 
-impl<BUS: spi::Transfer<u8>> spi::Transfer<u8> for &SharedBus<BUS> {
+impl<BUS: spi::Transfer<u8>> spi::Transfer<u8> for &CommonBus<BUS> {
     type Error = BUS::Error;
 
     fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
@@ -117,7 +120,7 @@ impl<BUS: spi::Transfer<u8>> spi::Transfer<u8> for &SharedBus<BUS> {
     }
 }
 
-impl<BUS: spi::Write<u8>> spi::Write<u8> for &SharedBus<BUS> {
+impl<BUS: spi::Write<u8>> spi::Write<u8> for &CommonBus<BUS> {
     type Error = BUS::Error;
 
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
@@ -142,9 +145,9 @@ impl<BUS: spi::Write<u8>> spi::Write<u8> for &SharedBus<BUS> {
 macro_rules! new {
     ($bus:ident, $T:ty) => {
         unsafe {
-            static mut _MANAGER: core::mem::MaybeUninit<shared_bus_rtic::SharedBus<$T>> =
+            static mut _MANAGER: core::mem::MaybeUninit<shared_bus_rtic::CommonBus<$T>> =
                 core::mem::MaybeUninit::uninit();
-            _MANAGER = core::mem::MaybeUninit::new(shared_bus_rtic::SharedBus::new($bus));
+            _MANAGER = core::mem::MaybeUninit::new(shared_bus_rtic::CommonBus::new($bus));
             &*_MANAGER.as_ptr()
         };
     };
