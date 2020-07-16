@@ -1,6 +1,6 @@
 #![no_std]
 //! # Introduction
-//! This crate provides a means of sharing an I2C bus between multiple drivers.
+//! This crate provides a means of sharing an I2C or SPI bus between multiple drivers.
 //!
 //! ## Notice
 //! Note that all of the drivers that use the same underlying bus **must** be stored within a single
@@ -47,7 +47,7 @@
 //! ```
 
 use core::sync::atomic::{AtomicBool, Ordering};
-use embedded_hal::blocking::i2c;
+use embedded_hal::blocking::{i2c, spi};
 
 pub struct SharedBus<BUS> {
     bus: core::cell::UnsafeCell<BUS>,
@@ -106,6 +106,22 @@ impl<BUS: i2c::WriteRead> i2c::WriteRead for &SharedBus<BUS> {
         buffer: &mut [u8],
     ) -> Result<(), Self::Error> {
         self.lock(|bus| bus.write_read(address, bytes, buffer))
+    }
+}
+
+impl<BUS: spi::Transfer<u8>> spi::Transfer<u8> for &SharedBus<BUS> {
+    type Error = BUS::Error;
+
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        self.lock(move |bus| bus.transfer(words))
+    }
+}
+
+impl<BUS: spi::Write<u8>> spi::Write<u8> for &SharedBus<BUS> {
+    type Error = BUS::Error;
+
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        self.lock(|bus| bus.write(words))
     }
 }
 
