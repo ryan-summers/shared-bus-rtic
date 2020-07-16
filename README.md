@@ -1,11 +1,7 @@
 # shared-bus-rtic
-Provides macros and type definitions for using `shared-bus` in an RTIC application
+Provides macros and type definitions for using a shared peripheral bus in an RTIC application
 
 ## Description
-
-This crate provides a convenience wrapper for using the
-[`shared-bus`](https://crates.io/crates/shared-bus) crate with
-[RTIC](https://crates.io/crates/cortex-m-rtic) applications.
 
 Note that all of the drivers that use the same underlying bus **must** be stored within a single
 resource (e.g. as one larger `struct`) within the RTIC resources. This ensures that RTIC will
@@ -16,11 +12,11 @@ This crate also provides convenience types for working with `shared-bus` RTIC re
 ## Usage Example
 ```rust
 
-use shared_bus_rtic::BusProxy;
+use shared_bus_rtic::SharedBus;
 
 struct SharedBusResources<T> {
-    device: Device<BusProxy<T>>,
-    other_device: OtherDevice<BusProxy<T>>,
+    device: Device<SharedBus<T>>,
+    other_device: OtherDevice<SharedBus<T>>,
 }
 
 // ...
@@ -100,9 +96,3 @@ pub fn low_priority_task(c: low_priority_task::Context) {
 In the above incorrect example, RTIC may interrupt the low priority task to complete the high
 priority task. However, the low priority task may be using the shared bus. In this case, the
 communication may be corrupted by multiple devices using the bus at the same time.
-
-## Details
-
-In order to use `shared-bus` with RTIC, the underlying `BusManager` object that `shared-bus` creates
-has to be stored with a 'static lifetime (to ensure that references it gives out are always valid).
-This crate provides a macro to declare a global static to store the `BusManager` into.
