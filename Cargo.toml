@@ -16,3 +16,4 @@ readme = "README.md"
 
 [dependencies]
 embedded-hal = "0.2.4"
+nb = "1.0.0"
