@@ -7,7 +7,8 @@ Note that all of the drivers that use the same underlying bus **must** be stored
 resource (e.g. as one larger `struct`) within the RTIC resources. This ensures that RTIC will
 prevent one driver from interrupting another while they are using the same underlying bus.
 
-This crate also provides convenience types for working with `shared-bus` RTIC resources.
+This crate also provides convenience types for working with RTIC resources that use the same
+underlying peripheral bus.
 
 ## Usage Example
 ```rust
