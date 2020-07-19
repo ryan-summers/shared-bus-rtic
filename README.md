@@ -28,7 +28,8 @@ struct Resources {
     shared_bus_resources: SharedBusResources<BusType>,
 }
 
-#[init] fn init(c: init::Context) -> init::LateResources {
+#[init]
+fn init(c: init::Context) -> init::LateResources {
     let manager = shared_bus_rtic::new!(bus, BusType);
     let device = Device::new(manager.acquire());
     let other_device = OtherDevice::new(manager.acquire());
