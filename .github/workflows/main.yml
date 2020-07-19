@@ -1,0 +1,34 @@
+name: Armv7 Build
+
+on:
+  push:
+    branches: [ master]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: thumbv7em-none-eabihf
+          override: true
+      - name: Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --verbose
+      - name: Build Debug
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+      - name: Build Release
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
