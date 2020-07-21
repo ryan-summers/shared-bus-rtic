@@ -51,9 +51,10 @@ jobs:
       - name: Build Debug
         uses: actions-rs/cargo@v1
         with:
-          command: build --feature thumbv6
+          command: build
+          args: --features thumbv6
       - name: Build Release
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --feature thumbv6
+          args: --release --features thumbv6
