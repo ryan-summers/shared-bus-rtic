@@ -66,8 +66,7 @@ impl<BUS> CommonBus<BUS> {
     }
 
     fn lock<R, F: FnOnce(&mut BUS) -> R>(&self, f: F) -> R {
-        self.busy
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        atomic::compare_exchange(&self.busy, false, true, Ordering::SeqCst, Ordering::SeqCst)
             .expect("Bus conflict");
         let result = f(unsafe { &mut *self.bus.get() });
 
@@ -125,6 +124,46 @@ impl<BUS: spi::Write<u8>> spi::Write<u8> for &CommonBus<BUS> {
 
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
         self.lock(|bus| bus.write(words))
+    }
+}
+
+#[cfg(feature = "thumbv6")]
+mod atomic {
+    use core::sync::atomic::{AtomicBool, Ordering};
+
+    #[inline(always)]
+    pub fn compare_exchange(
+        atomic: &AtomicBool,
+        current: bool,
+        new: bool,
+        _success: Ordering,
+        _failure: Ordering,
+    ) -> Result<bool, bool> {
+        cortex_m::interrupt::free(|_cs| {
+            let prev = atomic.load(Ordering::Acquire);
+            if prev == current {
+                atomic.store(new, Ordering::Release);
+                Ok(prev)
+            } else {
+                Err(false)
+            }
+        })
+    }
+}
+
+#[cfg(not(feature = "thumbv6"))]
+mod atomic {
+    use core::sync::atomic::{AtomicBool, Ordering};
+
+    #[inline(always)]
+    pub fn compare_exchange(
+        atomic: &AtomicBool,
+        current: bool,
+        new: bool,
+        success: Ordering,
+        failure: Ordering,
+    ) -> Result<bool, bool> {
+        atomic.compare_exchange(current, new, success, failure)
     }
 }
 

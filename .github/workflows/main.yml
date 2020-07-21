@@ -1,4 +1,4 @@
-name: Armv7 Build
+name: Arm Build
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  compile:
+  thumbv7:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -32,3 +32,29 @@ jobs:
         with:
           command: build
           args: --release
+
+  thumbv6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: thumbv6m-none-eabi
+          override: true
+      - name: Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --verbose
+      - name: Build Debug
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --features thumbv6
+      - name: Build Release
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --features thumbv6
