@@ -9,6 +9,15 @@ prevent one driver from interrupting another while they are using the same under
 
 This crate also provides convenience types for working with `shared-bus` RTIC resources.
 
+## Features
+
+This crate is compatible with thumbv6 architectures. To enable support for thumbv6
+devices, enable the `thumbv6` feature in your `Cargo.toml`:
+```
+[dependencies.shared-bus-rtic]
+features = ["thumbv6"]
+```
+
 ## Usage Example
 ```rust
 
