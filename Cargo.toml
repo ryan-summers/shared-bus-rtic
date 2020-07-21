@@ -1,10 +1,10 @@
 [package]
 name = "shared-bus-rtic"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Ryan Summers <ryan.summers@vertigo-designs.com>"]
 edition = "2018"
 
-description = "Provides macros and type definitions for sharing peripheral communication buses in an RTIC application"
+description = "Provides utilities for sharing peripheral communication buses in an RTIC application"
 homepage = "https://github.com/ryan-summers/shared-bus-rtic"
 repository = "https://github.com/ryan-summers/shared-bus-rtic"
 documentation = "https://docs.rs/shared-bus-rtic"

@@ -5,10 +5,9 @@ Provides macros and type definitions for using a shared peripheral bus in an RTI
 
 Note that all of the drivers that use the same underlying bus **must** be stored within a single
 resource (e.g. as one larger `struct`) within the RTIC resources. This ensures that RTIC will
-prevent one driver from interrupting another while they are using the same underlying bus.
-
-This crate also provides convenience types for working with RTIC resources that use the same
-underlying peripheral bus.
+prevent one driver from interrupting another while they are using the same underlying bus. The crate
+provides a detection mechanism that will panic if the shared bus is used in multiple task priorities
+without proper locking.
 
 ## Features
 
@@ -20,8 +19,8 @@ features = ["thumbv6"]
 ```
 
 ## Usage Example
-```rust
 
+```rust
 use shared_bus_rtic::SharedBus;
 
 struct SharedBusResources<T> {
@@ -82,7 +81,10 @@ In the above example, it can be seen that both devices on the bus are stored as 
 (in a shared `struct`). Because of this, RTIC properly locks the resource when either the high or
 low priority task is using the bus.
 
-### BAD EXAMPLE
+### Unsound Example
+
+The following example is unsound and should not be repeated. When a resource is interrupted, the
+crate will panic.
 
 ```rust
 struct Resources {
@@ -93,7 +95,8 @@ struct Resources {
 
 #[task(resources=[device_on_shared_bus], priority=5)
 pub fn high_priority_task(c: high_priority_task::Context) {
-    // ERROR: This task might interrupt the read on the other device!!!
+    // ERROR: This task might interrupt the read on the other device!
+    // If it does interrupt the low priority task, the shared bus manager will panic.
     c.resources.device_on_shared_bus.read();
 }
 
@@ -106,4 +109,5 @@ pub fn low_priority_task(c: low_priority_task::Context) {
 
 In the above incorrect example, RTIC may interrupt the low priority task to complete the high
 priority task. However, the low priority task may be using the shared bus. In this case, the
-communication may be corrupted by multiple devices using the bus at the same time.
+communication may be corrupted by multiple devices using the bus at the same time. To detect this,
+`shared-bus-rtic` will detect any bus contention and panic if the bus is already in use.
