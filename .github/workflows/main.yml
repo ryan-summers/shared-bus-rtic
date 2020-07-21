@@ -1,4 +1,4 @@
-name: Armv7 Build
+name: Arm Build
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  compile:
+  thumbv7:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -41,7 +41,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: thumbv6m-none-eabihf
+          target: thumbv6m-none-eabi
           override: true
       - name: Check
         uses: actions-rs/cargo@v1
