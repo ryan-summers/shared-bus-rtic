@@ -7,7 +7,8 @@ Note that all of the drivers that use the same underlying bus **must** be stored
 resource (e.g. as one larger `struct`) within the RTIC resources. This ensures that RTIC will
 prevent one driver from interrupting another while they are using the same underlying bus.
 
-This crate also provides convenience types for working with `shared-bus` RTIC resources.
+This crate also provides convenience types for working with RTIC resources that use the same
+underlying peripheral bus.
 
 ## Features
 
@@ -37,7 +38,8 @@ struct Resources {
     shared_bus_resources: SharedBusResources<BusType>,
 }
 
-#[init] fn init(c: init::Context) -> init::LateResources {
+#[init]
+fn init(c: init::Context) -> init::LateResources {
     let manager = shared_bus_rtic::new!(bus, BusType);
     let device = Device::new(manager.acquire());
     let other_device = OtherDevice::new(manager.acquire());

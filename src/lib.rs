@@ -47,7 +47,10 @@
 //! ```
 
 use core::sync::atomic::{AtomicBool, Ordering};
-use embedded_hal::blocking::{i2c, spi};
+use embedded_hal::{
+    blocking::{self, i2c},
+    spi,
+};
 
 /// A convenience type to use for declaring the underlying bus type.
 pub type SharedBus<T> = &'static CommonBus<T>;
@@ -111,21 +114,41 @@ impl<BUS: i2c::WriteRead> i2c::WriteRead for &CommonBus<BUS> {
     }
 }
 
-impl<BUS: spi::Transfer<u8>> spi::Transfer<u8> for &CommonBus<BUS> {
-    type Error = BUS::Error;
+macro_rules! spi {
+    ($($T:ty),*) => {
+        $(
+        impl<BUS: blocking::spi::Write<$T>> blocking::spi::Write<$T> for &CommonBus<BUS> {
+            type Error = BUS::Error;
 
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.lock(move |bus| bus.transfer(words))
+            fn write(&mut self, words: &[$T]) -> Result<(), Self::Error> {
+                self.lock(|bus| bus.write(words))
+            }
+        }
+
+        impl<BUS: blocking::spi::Transfer<$T>> blocking::spi::Transfer<$T> for &CommonBus<BUS> {
+            type Error = BUS::Error;
+
+            fn transfer<'w>(&mut self, words: &'w mut [$T]) -> Result<&'w [$T], Self::Error> {
+                self.lock(move |bus| bus.transfer(words))
+            }
+        }
+
+        impl<BUS: spi::FullDuplex<$T>> spi::FullDuplex<$T> for &CommonBus<BUS> {
+            type Error = BUS::Error;
+
+            fn read(&mut self) -> nb::Result<$T, Self::Error> {
+                self.lock(|bus| bus.read())
+            }
+
+            fn send(&mut self, word: $T) -> nb::Result<(), Self::Error> {
+                self.lock(|bus| bus.send(word))
+            }
+        }
+        )*
     }
 }
 
-impl<BUS: spi::Write<u8>> spi::Write<u8> for &CommonBus<BUS> {
-    type Error = BUS::Error;
-
-    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.lock(|bus| bus.write(words))
-    }
-}
+spi!(u8, u16, u32, u64);
 
 #[cfg(feature = "thumbv6")]
 mod atomic {
