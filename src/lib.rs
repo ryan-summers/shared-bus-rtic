@@ -69,8 +69,13 @@ impl<BUS> CommonBus<BUS> {
     }
 
     fn lock<R, F: FnOnce(&mut BUS) -> R>(&self, f: F) -> R {
-        atomic::compare_exchange(&self.busy, false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .expect("Bus conflict");
+        let compare =
+            atomic::compare_exchange(&self.busy, false, true, Ordering::SeqCst, Ordering::SeqCst)
+                .is_err();
+        if compare {
+            panic!("Bus conflict");
+        }
+
         let result = f(unsafe { &mut *self.bus.get() });
 
         self.busy.store(false, Ordering::SeqCst);
