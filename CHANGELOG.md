@@ -2,7 +2,7 @@
 
 This file contains all changes to the shared-bus-rtic library.
 
-## [0.2.3+deprecated]
+## [0.2.3+deprecated] - 2023-07-03
 
 ### Added
 - This crate is now deprecated. Users should use
