@@ -1,6 +1,11 @@
 # shared-bus-rtic
 Provides macros and type definitions for using a shared peripheral bus in an RTIC application
 
+## :warning: Deprecation Notice :warning:
+
+With the release of `embedded-hal` v1.0, this crate is no longer necessary. Instead, users should
+migrate to using `embedded-hal` v1.0 traits alongside the [`embedded-hal-bus`](https://crates.io/crates/embedded-hal-bus).
+
 ## Description
 
 Note that all of the drivers that use the same underlying bus **must** be stored within a single

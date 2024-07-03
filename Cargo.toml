@@ -1,6 +1,6 @@
 [package]
 name = "shared-bus-rtic"
-version = "0.2.2"
+version = "0.2.3+deprecated"
 authors = ["Ryan Summers <ryan.summers@vertigo-designs.com>"]
 edition = "2018"
 
